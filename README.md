@@ -35,6 +35,6 @@ Followed these instructions: https://cloudinfrastructureservices.co.uk/how-to-in
 
 3. ... a statement that allows NFS-connections to folder
 
-    /nfs/postgres 192.168.68.0/24(rw,sync,no_subtree_check,no_root_squash)
+        /nfs/postgres 192.168.68.0/24(rw,sync,no_subtree_check,no_root_squash)
 
 4. Create volume in Docker
