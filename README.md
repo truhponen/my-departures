@@ -25,8 +25,16 @@ Docker Compose file
 
 # Mounting NFS drive
 
-Create folder
+Followed these instructions: https://cloudinfrastructureservices.co.uk/how-to-install-nfs-on-debian-11-server/
 
-Add folder to "exports"-file
+1. Create folder
+
+2. Add to "exports"-file...
 
     sudo nano /etc/exports
+
+... a statement that allows NFS-connections to folder
+
+    /nfs/postgres 192.168.68.0/24(rw,sync,no_subtree_check,no_root_squash)
+
+3. Create volume in Docker
