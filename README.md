@@ -22,3 +22,6 @@ Docker Compose file
         volumes:
           - my-departures:/my-departures/data:rw
           - /etc/localtime:/etc/localtime:ro
+
+# Mounting NFS drive
+
