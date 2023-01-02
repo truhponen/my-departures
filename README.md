@@ -31,7 +31,7 @@ Followed these instructions: https://cloudinfrastructureservices.co.uk/how-to-in
 
 2. Add to "exports"-file...
 
-    sudo nano /etc/exports
+        sudo nano /etc/exports
 
 ... a statement that allows NFS-connections to folder
 
