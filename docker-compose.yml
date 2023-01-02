@@ -16,5 +16,5 @@ services:
 #      - 8123:8123/tcp
 
     volumes:
-#      - mydepartures:/data:rw
+      - mydepartures:/data
       - /etc/localtime:/etc/localtime:ro
