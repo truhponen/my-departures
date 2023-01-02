@@ -1,0 +1,7 @@
+.idea/
+__pycache__/
+venv/
+*.log
+/db
+config.yaml
+rest_config.yaml
