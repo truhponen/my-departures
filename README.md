@@ -25,3 +25,8 @@ Docker Compose file
 
 # Mounting NFS drive
 
+Create folder
+
+Add folder to "exports"-file
+
+    sudo nano /etc/exports
