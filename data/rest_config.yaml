@@ -1,0 +1,33 @@
+# Settings for REST-interface
+hsl:
+  method: 'POST'
+  url: 'https://api.digitransit.fi/routing/v1/routers/hsl/index/graphql'
+  headers:
+    Content-Type: 'application/json'
+  body:
+    query: '{{stop_type}(id: {stop_id}){name,stoptimesWithoutPatterns{serviceDay,scheduledArrival,realtimeArrival,serviceDay, trip{route{shortName}},headsign}}}'
+
+telegram_send_message_HSL_1000103:
+  method: 'GET'
+  url: "https://api.telegram.org/bot{app_token}/sendMessage"
+  headers:
+    Content-Type: "application/json"
+  body:
+    chat_id:  # Chat ID for users chat with bot ... I hope in future these are stored automatically to database.
+    text: '{message}'
+
+telegram_send_message_HSL_2000109:
+  method: 'GET'
+  url: "https://api.telegram.org/bot{app_token}/sendMessage"
+  headers:
+    Content-Type: "application/json"
+  body:
+    chat_id: # Chat ID for users chat with bot ... I hope in future these are stored automatically to database.
+    text: '{message}'
+
+telegram_get_updates:
+  method: 'GET'
+  url: "https://api.telegram.org/bot{token}/getUpdates"
+  headers:
+    Content-Type: "application/json"
+  body:

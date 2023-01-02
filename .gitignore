@@ -3,5 +3,5 @@ __pycache__/
 venv/
 *.log
 /db
-config.yaml
-rest_config.yaml
+# config.yaml
+# rest_config.yaml
