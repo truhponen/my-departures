@@ -29,11 +29,11 @@ Followed these instructions: https://cloudinfrastructureservices.co.uk/how-to-in
 
 1. Create folder
 
-2.1 Add to "exports"-file...
+2.1. Add to "exports"-file...
 
         sudo nano /etc/exports
 
-2.2 ... a statement that allows NFS-connections to folder
+2.2. ... a statement that allows NFS-connections to folder
 
     /nfs/postgres 192.168.68.0/24(rw,sync,no_subtree_check,no_root_squash)
 
