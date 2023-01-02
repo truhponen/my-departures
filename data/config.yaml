@@ -2,10 +2,10 @@
 station:  # Note that HSL separates "stations" and "stop"
   HSL_1000103:  # Add ID of preferred station here
     app: 'Telegram'
-    token: '' # Add the bot token from Telegram here
+    token: '5889356316:AAHWfP6uXPiLMG1hurV9RxYwJ87LjRHGUvE' # Add the bot token from Telegram here
   HSL_2000109:
     app: 'Telegram'
-    token: ''
+    token: '5941394435:AAHmjJz8vxCtMLr7N65E-x8OARfV_4GcBco'
 
 stop: {}  # Add stops instead if you need schedules from those. Structure is same as for stations.
 
