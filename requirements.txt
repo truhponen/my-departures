@@ -1,0 +1,4 @@
+tinydb~=4.7.0
+requests~=2.28.1
+PyYAML~=6.0
+flatdict~=4.0.1
