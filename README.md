@@ -37,4 +37,8 @@ Followed these instructions: https://cloudinfrastructureservices.co.uk/how-to-in
 
         /nfs/postgres 192.168.68.0/24(rw,sync,no_subtree_check,no_root_squash)
 
-4. Create volume in Docker
+4. Restart NFS server
+
+        systemctl restart nfs-server
+        
+5. Create volume in Docker
