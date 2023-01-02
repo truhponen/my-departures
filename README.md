@@ -20,7 +20,7 @@ Docker Compose file
     #      - 8123:8123/tcp
 
         volumes:
-          - my-departures:/my-departures/data:rw
+          - my-departures:/data:rw
           - /etc/localtime:/etc/localtime:ro
 
 # Mounting NFS drive
