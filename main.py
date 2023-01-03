@@ -1,4 +1,4 @@
-import bot_operations
+import bot
 import configuration
 import db
 import logging
@@ -21,7 +21,7 @@ my_bots = []
 
 logging.info("Adding stations to bot list")
 for station in config.app['station']:
-    station = bot_operations.departures_to_bot(station, 'station', station)
+    station = bot.bot_operations(station, 'station', station)
     my_bots.append(station)
     logging.info("Bot " + str(station.name) + " created")
 
@@ -30,9 +30,9 @@ for stop in config.app['stop']:
     my_bots.append(stop)
     logging.info("Bot " + str(stop.name) + " added to 'my_bots'-list")
 
-while True:
-    logging.info("Starting main program")
-    for item in my_bots:
-        item.update_departures()
-    logging.info("Waiting until next updates")
-    time.sleep(config.app['update_frequency'])
+logging.info("Starting main program")
+for item in my_bots:
+    item.get_departures()
+    item.send_messages()
+logging.info("Waiting until next updates")
+time.sleep(config.app['update_frequency'])

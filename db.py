@@ -34,3 +34,4 @@ def remove_based_on_time(table_id, dead_line):
     table = db.table(table_id)
     table.remove(Query().time < int(dead_line))
     print(departures_db)
+    
