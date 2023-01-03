@@ -2,6 +2,6 @@
 __pycache__/
 venv/
 *.log
-db
+departures.json
 config.yaml
 rest_config.yaml

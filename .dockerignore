@@ -2,6 +2,6 @@
 __pycache__/
 venv/
 /data/logs
-db
+/data/departures.json
 /data/config.yaml
 /data/rest_config.yaml
