@@ -2,6 +2,7 @@ import bot_operations
 import configuration
 import db
 import logging
+import os
 import time
 # import updates_from_bot
 
@@ -9,7 +10,8 @@ import time
 # Load configuration
 config = configuration.yaml_configurations()
 
-logging.basicConfig(filename='./app/data/logs/' + str(config.date) + '.log', level=(config.app['logging_level']))
+app_dir = os.environ[APP_DIR]
+logging.basicConfig(filename=app_dir + '/data/logs/' + str(config.date) + '.log', level=(config.app['logging_level']))
 
 if config.app['initialize_departures_db']:
     db.drop_tables()

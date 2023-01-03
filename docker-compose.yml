@@ -16,7 +16,7 @@ services:
 #      - 8123:8123/tcp
 
     volumes:
-      - my-departures:/app/data:rw
+      - my-departures:${APP_DIR}/data:rw
       - /etc/localtime:/etc/localtime:ro
 
 volumes:
