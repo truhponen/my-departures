@@ -6,8 +6,9 @@ import yaml
 
 # Serve configurations from yaml-file
 class yaml_configurations():
-    app_dir = os.environ[APP_DIR]
+
     def __init__(self):
+        app_dir = os.environ['APP_DIR']
         file_app = open(app_dir + "/data/config.yaml", "r")
         file_rest = open(app_dir + "/data/rest_config.yaml", "r")
         self.app = yaml.load(file_app, Loader=yaml.FullLoader)

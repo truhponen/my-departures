@@ -1,7 +1,7 @@
 .idea/
 __pycache__/
 venv/
-*.log
-/db
-config.yaml
-rest_config.yaml
+/data/logs
+db
+/data/config.yaml
+/data/rest_config.yaml

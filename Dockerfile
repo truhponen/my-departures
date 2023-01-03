@@ -12,4 +12,4 @@ RUN pip3 install -r ${APP_DIR}/requirements.txt
 
 COPY . /app
 
-CMD [ "python3", "${APP_DIR}/main.py" ]
+CMD python3 ${APP_DIR}/main.py
