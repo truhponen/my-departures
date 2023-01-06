@@ -17,8 +17,7 @@ def resolve_body(service, **kwargs):
     for item in body:
         for arg in kwargs:
             if arg in body[item]:
-                body[item] = body[item].replace("{"+arg+"}", kwargs[arg])
-    print(body)
+                body[item] = body[item].replace("{"+arg+"}", str(kwargs[arg]))
     return body
 
 def rest(service, **kwargs):

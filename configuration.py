@@ -8,7 +8,8 @@ import yaml
 class yaml_configurations():
 
     def __init__(self):
-        app_dir = os.environ['APP_DIR']
+        # app_dir = os.environ['APP_DIR']
+        app_dir = "."
         file_app = open(app_dir + "/data/config.yaml", "r")
         file_rest = open(app_dir + "/data/rest_config.yaml", "r")
         self.app = yaml.load(file_app, Loader=yaml.FullLoader)
