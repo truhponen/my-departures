@@ -1,33 +1,26 @@
-import configuration
-# import logging
+import config
+import logging
 import requests
 
-
-def resolve_url(service, **kwargs):
-    config = configuration.yaml_configurations()
-    url = config.rest[service]['url']
-    for arg in kwargs:
-        if arg in url:
-            url = url.replace("{"+arg+"}", kwargs[arg])
-    return url
-
-def resolve_body(service, **kwargs):
-    config = configuration.yaml_configurations()
-    body = config.rest[service]['body']
-    for item in body:
+class rest:
+    def __init__(self, service, **kwargs):
+        self.service = service
+        self.method = config.rest[service]['method']
+        self.headers = config.rest[service]['headers']
+        self.url = config.rest[service]['url']
         for arg in kwargs:
-            if arg in body[item]:
-                body[item] = body[item].replace("{"+arg+"}", str(kwargs[arg]))
-    return body
+            if arg in self.url:
+                self.url = self.url.replace("{"+arg+"}", kwargs[arg])
 
-def rest(service, **kwargs):
-    config = configuration.yaml_configurations()
-    method = config.rest[service]['method']
-    url = resolve_url(service, **kwargs)
-    headers = config.rest[service]['headers']
-    body = resolve_body(service, **kwargs)
-    if method == "POST":
-         return requests.post(url, headers=headers, json=body).json()
-    elif method == "GET":
-        return requests.get(url, headers=headers, json=body).json()
+    def call(self, body):
+        if self.method == "POST":
+            logging.info("Body for " + str(self.service) + " is " + str(body))
+            response = requests.post(self.url, headers=self.headers, json=body).json()
+            del body
+            return response
+        elif self.method == "GET":
+            logging.info("Body is " + str(body))
+            response = requests.get(self.url, headers=self.headers, json=body).json()
+            del body
+            return response
 
