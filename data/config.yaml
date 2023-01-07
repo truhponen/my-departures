@@ -3,11 +3,15 @@ station:  # Note that HSL separates "stations" and "stop"
   HSL_1000103:  # Add ID of preferred station here
     app: 'Telegram'
     token: '5889356316:AAHWfP6uXPiLMG1hurV9RxYwJ87LjRHGUvE' # Add the bot token from Telegram here
+    chat_id: '203372168'
   HSL_2000109:
     app: 'Telegram'
     token: '5941394435:AAHmjJz8vxCtMLr7N65E-x8OARfV_4GcBco'
+    chat_id: '203372168'
 
 stop: {}  # Add stops instead if you need schedules from those. Structure is same as for stations.
+
+digitransit-subscription-key: '2831bba607f4496795101a9a0d693322'
 
 # Settings for sending messages
 # How much earlier departures are sent
