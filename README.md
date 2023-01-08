@@ -61,3 +61,19 @@ properly filled config.yaml needs to be added to "/data"-folder.
 
     # Other settings
     logging_level: INFO  # Logs are stored in folder "logs/"
+
+### How to find HSL's stop ID
+
+[added here later]
+
+### How to determ stop type
+
+[added here later]
+
+### How to get Telegam token
+
+[added here later]
+
+### How to get chat ID
+
+[added here later]
