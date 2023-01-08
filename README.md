@@ -1,44 +1,79 @@
 # my-departures
 
-Docker Compose file
+My Deartures is a small utility that pulls stop schedules from HSL (Helsinki metropolitan transportation) APIs and publishes them to Telegram bots.
+
+Image for Raspberry Pi is available in https://github.com/truhponen/my-departures/pkgs/container/my-departures
+
+## Docker Compose
+
+Docker Compose file used to setup Docker container
     
     version: '3'
-    
-    # Transit-stack
-    # My Departures service
+
     services:
       my-departures:
+        # latest and dev images available
         image: "truhponen/my-departures:latest"
         restart: unless-stopped
         privileged: true
 
-    # Host network mode is used to avoid random troubles 
+        # Host network mode is used to avoid random troubles 
         network_mode: host
 
-    # Ports are needed only when webhook is developed
-    #    ports:
-    #      - 8123:8123/tcp
-
         volumes:
-          - my-departures:/data:rw
+        # Configuration expects that there is volume. Docker image is build so that app is in "/app"-folder and configuration files are in "/app/data"-folder.
+          - my-departures:${APP_DIR}/data:rw
+        # Mapping localtime to container ensures that time in message is correct ... of course assuming server time is correct
           - /etc/localtime:/etc/localtime:ro
 
-# Mounting NFS drive
+    volumes:
+      my-departures:
+        external: true
 
-Followed these instructions: https://cloudinfrastructureservices.co.uk/how-to-install-nfs-on-debian-11-server/
+## Configuration
 
-1. Create folder
+Configuration file is used to configure solution.
 
-2. Add to "exports"-file...
+properly filled config.yaml needs to be added to "/data"-folder.
 
-        sudo nano /etc/exports
+    # Settings for sending HSL data to app.
+    stops:
+      HSL_1000103:  # Add ID of preferred station here
+        stop_type: 'station' # Needed because HSL separates "stations" and "stop"
+        app: 'Telegram'
+        token: '[Add the bot token from Telegram here]'
+        chat_id: '[add chat ID here]'  # Later this will be automated
+      HSL_2000109:
+        stop_type: 'station'
+        app: 'Telegram'
+        token: '[Add the bot token from Telegram here]'
+        chat_id: '[add chat ID here]'  # Later this will be automated
 
-3. ... a statement that allows NFS-connections to folder
+    digitransit-subscription-key: '[Add HSL secret here]'
 
-        /nfs/postgres 192.168.68.0/24(rw,sync,no_subtree_check,no_root_squash)
+    # Settings for sending messages
+    # How much earlier departures are sent
+    time_distance: 900
 
-4. Restart NFS server
+    # Setting for updating data from HSL.
+    initialize_departures_db: False  # If departures database is truncated during startup.
+    update_frequency: 60  # How ofter new departures is requested from HSL.
 
-        systemctl restart nfs-server
-        
-5. Create volume in Docker
+    # Other settings
+    logging_level: INFO  # Logs are stored in folder "logs/"
+
+### How to find HSL's stop ID
+
+[added here later]
+
+### How to determ stop type
+
+[added here later]
+
+### How to get Telegam token
+
+[added here later]
+
+### How to get chat ID
+
+[added here later]
