@@ -1,5 +1,5 @@
 import db
-import calls
+import bot_rest
 import config
 from datetime import datetime
 import flatdict
@@ -16,22 +16,29 @@ class bot_operations:
         self.stop_type = stop_type
         self.stop_id = stop_id
         self.stop_id_hsl = str('\"'+self.stop_id+'\"').replace("_", ":")
-        self.app = config.app[stop_type][stop_id]['app'].lower()
-        self.app_token = config.app[stop_type][stop_id]['token']
-        self.get_departures_rest = calls.rest('hsl')
-        self.send_message_rest = calls.rest(str(self.app) + "_send_message_" + self.stop_id, app_token=self.app_token)
-        self.clear_departures_rest = calls.rest(str(self.app) + "_delete_message_" + self.stop_id, app_token=self.app_token)
+        self.app = config.app['stops'][stop_id]['app'].lower()
+        self.token = config.app['stops'][stop_id]['token']
+        self.get_departures_rest = bot_rest.rest('hsl', 'get_departures')
+        self.send_message_rest = bot_rest.rest(str(self.app), 'send_message', token=self.token)
+        self.clear_departures_rest = bot_rest.rest(str(self.app), 'delete_message', token=self.token)
+
+
 
     def get_departures(self):
-        
         logging.info("Updating bot " + str(self.stop_id))
-        # Retrieve HSL dataset and flatten it.
-        body = config.rest[self.get_departures_rest.service]['body']
-        ids = {'stop_type': self.stop_type, 'stop_id_hsl': self.stop_id_hsl}
-        for item in body:
-            for id in ids:
-                if id in body[item]:
-                    body[item] = body[item].replace("{" + str(id) +"}", str(ids[id]))
+
+        # Form body
+        body = {}
+        body_template = config.rest['hsl']['get_departures']['body']
+        kwargs = {'stop_type': self.stop_type, 'stop_id_hsl': self.stop_id_hsl}
+        for item in body_template:
+            new_value = body_template[item]
+            for arg in kwargs:
+                if arg in new_value:
+                    new_value = new_value.replace("{"+arg+"}", kwargs[arg])
+            body[item] = new_value
+
+        # Request new data set
         new_dataset = self.get_departures_rest.call(body)
         new_dataset = flatdict.FlatDict(new_dataset, delimiter=".")
         new_dataset = new_dataset['data.'+self.stop_type+'.stoptimesWithoutPatterns']
@@ -65,7 +72,6 @@ class bot_operations:
                 logging.info("Stored departure " + str(departure_data))
 
     def send_messages(self):
-        
         logging.info("Send message for " + str(self.stop_id))
         # Retrieve departures from database
         dead_line = time.time() + config.app['time_distance']
@@ -80,12 +86,24 @@ class bot_operations:
                 departure_time = departure['time']
                 departure_headsign = departure['headsign']
 
-                # Send messages
-                message = datetime.fromtimestamp(departure_time).strftime("%H:%M") + " - " + departure_headsign
-                logging.info("Message is " + message)
-                body = {'chat_id': config.rest[self.send_message_rest.service]['body']['chat_id'] ,'text': message}
-                rest_response = self.send_message_rest.call(body)
+                # Form message
+                text = datetime.fromtimestamp(departure_time).strftime("%H:%M") + " - " + departure_headsign
+                logging.info("Message is " + text)
+
+                # Form body
+                body = {}
+                body_template = config.rest[self.app]['send_message']['body']
+                kwargs = {'chat_id': str(config.app['stops'][self.stop_id]['chat_id']), 'text': text}
+                for item in body_template:
+                    new_value = body_template[item]
+                    for arg in kwargs:
+                        if arg in new_value:
+                            new_value = new_value.replace("{"+arg+"}", kwargs[arg])
+                    body[item] = new_value
                 
+                # Send message
+                rest_response = self.send_message_rest.call(body)
+
                 # Update message details to database
                 message_ids = rest_response['result']['message_id']
                 chat_ids = rest_response['result']['chat']['id']
@@ -98,7 +116,6 @@ class bot_operations:
 
 
     def clean_departures(self):
-
         logging.info("Cleaning messages and data base " + str(self.stop_id))
         # Retrieve departures from database
         dead_line = time.time()
@@ -112,10 +129,22 @@ class bot_operations:
                 for db_item in db_return_based_on_time_response:
                     departure_id = db_item['id']
                     chat_id = db_item['chat_id']
+                    chat_id_str = str(chat_id)
                     message_id = db_item['message_id']
+                    message_id_str = str(message_id)
 
-                    # Remove messages
-                    body = {'chat_id': chat_id, 'message_id': message_id}
+                    # Form body
+                    body = {}
+                    body_template = config.rest[self.app]['delete_message']['body']
+                    kwargs = {'chat_id': chat_id_str, 'message_id': message_id_str}
+                    for item in body_template:
+                        new_value = body_template[item]
+                        for arg in kwargs:
+                            if arg in new_value:
+                                new_value = new_value.replace("{"+arg+"}", kwargs[arg])
+                        body[item] = new_value
+
+                    # Delete messages
                     rest_response = self.clear_departures_rest.call(body)
                     logging.info("Response to delete message for " + str(departure_id) + ": " +str(rest_response))
 

@@ -1,52 +1,34 @@
 # Settings for REST-interface
 hsl:
-  method: 'POST'
-  url: 'https://api.digitransit.fi/routing/v1/routers/hsl/index/graphql'
-  headers:
-    Content-Type: 'application/json'
-    digitransit-subscription-key: '2831bba607f4496795101a9a0d693322'
-  body:
-    query: '{{stop_type}(id: {stop_id_hsl}){name,stoptimesWithoutPatterns{serviceDay,scheduledArrival,realtimeArrival,serviceDay, trip{route{shortName}},headsign}}}'
+  get_departures: 
+    method: 'POST'
+    url: 'https://api.digitransit.fi/routing/v1/routers/hsl/index/graphql'
+    headers:
+      Content-Type: 'application/json'
+      digitransit-subscription-key: '{digitransit-subscription-key}'
+    body:
+      query: '{{stop_type}(id: {stop_id_hsl}){name,stoptimesWithoutPatterns(numberOfDepartures: 10){serviceDay,scheduledArrival,realtimeArrival,serviceDay, trip{route{shortName}},headsign}}}'
 
-telegram_send_message_HSL_1000103:
-  method: 'GET'
-  url: "https://api.telegram.org/bot{app_token}/sendMessage"
-  headers:
-    Content-Type: "application/json"
-  body:
-    chat_id: '203372168'  # Chat ID for users chat with bot ... I hope in future these are stored automatically to database.
-    text: '{message}'
-
-telegram_send_message_HSL_2000109:
-  method: 'GET'
-  url: "https://api.telegram.org/bot{app_token}/sendMessage"
-  headers:
-    Content-Type: "application/json"
-  body:
-    chat_id: '203372168'  # Chat ID for users chat with bot ... I hope in future these are stored automatically to database.
-    text: '{message}'
-
-telegram_delete_message_HSL_1000103:
-  method: 'GET'
-  url: "https://api.telegram.org/bot{app_token}/deleteMessage"
-  headers:
-    Content-Type: "application/json"
-  body:
-    chat_id: '{chat_id}'  # Chat ID for users chat with bot ... I hope in future these are stored automatically to database.
-    message_id: '{message_id}'
-
-telegram_delete_message_HSL_2000109:
-  method: 'GET'
-  url: "https://api.telegram.org/bot{app_token}/deleteMessage"
-  headers:
-    Content-Type: "application/json"
-  body:
-    chat_id: '{chat_id}'  # Chat ID for users chat with bot ... I hope in future these are stored automatically to database.
-    message_id: '{message_id}'
-
-telegram_get_updates:
-  method: 'GET'
-  url: "https://api.telegram.org/bot{token}/getUpdates"
-  headers:
-    Content-Type: "application/json"
-  body:
+telegram:
+  send_message:
+    method: 'GET'
+    url: "https://api.telegram.org/bot{token}/sendMessage"
+    headers:
+      Content-Type: "application/json"
+    body:
+      chat_id: '{chat_id}'  # Chat ID for users chat with bot ... I hope in future these are stored automatically to database.
+      text: '{text}'
+  delete_message:
+    method: 'GET'
+    url: "https://api.telegram.org/bot{token}/deleteMessage"
+    headers:
+      Content-Type: "application/json"
+    body:
+      chat_id: '{chat_id}'  # Chat ID for users chat with bot ... I hope in future these are stored automatically to database.
+      message_id: '{message_id}'
+  get_updates:
+    method: 'GET'
+    url: "https://api.telegram.org/bot{token}/getUpdates"
+    headers:
+      Content-Type: "application/json"
+    body:
