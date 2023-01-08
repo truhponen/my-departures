@@ -1,4 +1,5 @@
 import bot
+import bot_rest
 import config
 import db
 import logging
@@ -9,24 +10,13 @@ if config.app['initialize_departures_db']:
     db.drop_tables()
     logging.info("Tables dropped")
 
+my_stops = config.app['stops']
 my_bots = []
 
-logging.info("Adding stations to bot list")
-if len(config.app['station']) == 0:
-    logging.info("No stations defined")
-else:
-    for station in config.app['station']:
-        station = bot.bot_operations(station, 'station', station)
-        my_bots.append(station)
-        logging.info("Bot " + str(station.name) + " created")
-
-logging.info("Adding stops to bot list")
-if len(config.app['stop']) == 0:
-    logging.info("No stops defined")
-else:
-    for stop in config.app['stop']:
-        my_bots.append(stop)
-        logging.info("Bot " + str(stop.name) + " added to 'my_bots'-list")
+for stop in my_stops:
+    stop = bot.bot_operations(str(stop), config.app['stops'][stop]['stop_type'], stop)
+    my_bots.append(stop)
+    logging.info("Bot " + str(stop.name) + " created")
 
 logging.info("Starting main program")
 while True:

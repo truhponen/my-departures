@@ -4,7 +4,7 @@ FROM python:3.8-slim-buster
 
 WORKDIR .
 
-ENV APP_DIR=./app
+ENV APP_DIR=/app
 
 COPY requirements.txt ${APP_DIR}/requirements.txt
 

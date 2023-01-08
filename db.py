@@ -22,8 +22,6 @@ def update(table_id, departure_id, dataset):
     item = Query()
     results = table.search(item.id == departure_id)
     for result in results:
-        print(result)
-        print(dataset)
         result.update(dataset)
         return True
 
