@@ -18,6 +18,15 @@ telegram:
     body:
       chat_id: '{chat_id}'  # Chat ID for users chat with bot ... I hope in future these are stored automatically to database.
       text: '{text}'
+      disable_notification: True
+  update_message:
+    method: 'GET'
+    url: "https://api.telegram.org/bot{token}/editMessageText"
+    headers:
+      Content-Type: "application/json"
+    body:
+      chat_id: '{chat_id}'  # Chat ID for users chat with bot ... I hope in future these are stored automatically to database.
+      message_id: '{message_id}'
   delete_message:
     method: 'GET'
     url: "https://api.telegram.org/bot{token}/deleteMessage"

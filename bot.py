@@ -7,9 +7,6 @@ import logging
 import time
 
 
-# Load configuration
-# config = configuration.yaml_configurations()
-
 class bot_operations:
     def __init__(self, name, stop_type, stop_id):
         self.name = name
@@ -20,17 +17,25 @@ class bot_operations:
         self.token = config.app['stops'][stop_id]['token']
         self.get_departures_rest = bot_rest.rest('hsl', 'get_departures')
         self.send_message_rest = bot_rest.rest(str(self.app), 'send_message', token=self.token)
+        self.update_message_rest = bot_rest.rest(str(self.app), 'update_message', token=self.token)
         self.clear_departures_rest = bot_rest.rest(str(self.app), 'delete_message', token=self.token)
+    
+
+    def get_updates(self):
+        logging.info("Getting updates related to " + str(self.stop_id))
+
+        # Get updates from 
 
 
 
     def get_departures(self):
-        logging.info("Updating bot " + str(self.stop_id))
+        logging.info("Getting dedpartures for " + str(self.stop_id))
 
         # Form body
         body = {}
         body_template = config.rest['hsl']['get_departures']['body']
-        kwargs = {'stop_type': self.stop_type, 'stop_id_hsl': self.stop_id_hsl}
+        kwargs = {'stop_type': self.stop_type,
+                  'stop_id_hsl': self.stop_id_hsl}
         for item in body_template:
             new_value = body_template[item]
             for arg in kwargs:
@@ -59,7 +64,8 @@ class bot_operations:
                     'headsign': departure_headsign,
                     'send_status': False,
                     'message_id': "",
-                    'chat_id': ""}
+                    'chat_id': "",
+                    'updated': time.time()}
                 db.upsert(self.stop_id, departure_id, departure_data)
                 logging.info("Stored departure " + str(departure_data))
 
@@ -67,18 +73,20 @@ class bot_operations:
                 logging.info("HSL data for departure " + str(departure_id) + " is old")
                 departure_data = {
                     'id': departure_id,
-                    'time': departure_time}
+                    'time': departure_time,
+                    'updated': time.time()}
                 db.upsert(self.stop_id, departure_id, departure_data)
                 logging.info("Stored departure " + str(departure_data))
 
     def send_messages(self):
-        logging.info("Send message for " + str(self.stop_id))
+        logging.info("Sending messages for " + str(self.stop_id))
+
         # Retrieve departures from database
         dead_line = time.time() + config.app['time_distance']
         db_response = db.return_based_on_time(self.stop_id, dead_line, False)
 
         if len(db_response) == 0:
-            logging.info("No new dedpartures to send messages") 
+            logging.info("No new departures to send messages") 
 
         else:
             for departure in db_response:
@@ -93,7 +101,8 @@ class bot_operations:
                 # Form body
                 body = {}
                 body_template = config.rest[self.app]['send_message']['body']
-                kwargs = {'chat_id': str(config.app['stops'][self.stop_id]['chat_id']), 'text': text}
+                kwargs = {'chat_id': str(config.app['stops'][self.stop_id]['chat_id']),
+                          'text': text}
                 for item in body_template:
                     new_value = body_template[item]
                     for arg in kwargs:
@@ -110,13 +119,50 @@ class bot_operations:
 
                 message_data = {'send_status': True,
                                 'message_id': message_ids,
-                                'chat_id': chat_ids}
+                                'chat_id': chat_ids,
+                                'updated': time.time()}
                 db.upsert(self.stop_id, departure_id, message_data)
                 logging.info("Departure " + str(departure_id) + " updated with message details " + str(message_data))          
 
+    def update_message(self):
+        logging.info("Updating messages for " + str(self.stop_id))       
+
+        # Retrieve departures from database
+        dead_line = time.time() + config.app['time_distance']
+        db_response = db.return_based_on_time(self.stop_id, dead_line, True)
+
+        if len(db_response) == 0:
+            logging.info("No departures to be updated") 
+
+        else:
+            for departure in db_response:
+                departure_id = departure['id']
+                departure_time = departure['time']
+                departure_headsign = departure['headsign']
+                message_id = departure['message_id']
+                chat_id = departure['chat_id']
+
+                # Form message
+                text = datetime.fromtimestamp(departure_time).strftime("%H:%M") + " - " + departure_headsign
+                logging.info("Message is " + text)
+
+                # Form body
+                kwargs = {'chat_id': chat_id,
+                          'message_id': message_id,
+                          'text': text}
+                body = self.update_message_rest.form_body(kwargs)
+                logging.info("Body for update message is " + str(body))
+                
+                # Update message
+                self.update_message_rest.call(body)
+
+                message_data = {'time': departure_time,
+                                'updated': time.time()}
+                db.upsert(self.stop_id, departure_id, message_data)
+                logging.info("Departure " + str(departure_id) + " updated with message details " + str(message_data)) 
 
     def clean_departures(self):
-        logging.info("Cleaning messages and data base " + str(self.stop_id))
+        logging.info("Cleaning messages and data base for " + str(self.stop_id))
         # Retrieve departures from database
         dead_line = time.time()
         for send_status in [True, False]:
@@ -136,7 +182,8 @@ class bot_operations:
                     # Form body
                     body = {}
                     body_template = config.rest[self.app]['delete_message']['body']
-                    kwargs = {'chat_id': chat_id_str, 'message_id': message_id_str}
+                    kwargs = {'chat_id': chat_id_str,
+                              'message_id': message_id_str}
                     for item in body_template:
                         new_value = body_template[item]
                         for arg in kwargs:
@@ -152,16 +199,4 @@ class bot_operations:
                     db_remove_response = db.remove(self.stop_id, departure_id)
                     logging.info("Response to delete message for " + str(departure_id) + ": " +str(db_remove_response))
 
-        # Retrieve departures
-        # FROM table self.stop_id
-        # departures WHERE
-        # self.stop_id
-        # departure_time < time.time
-
-        # If messages has message_id
-        # service = str(self.app) + "_remove_message_" + self.stop_id
-        # calls.rest(service, app_token=self.app_token, chat_id, message_id)
-
-        # Remove past departures from database table
-        # db.remove_based_on_time(self.stop_id, time.time())
         
