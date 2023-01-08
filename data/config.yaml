@@ -9,9 +9,15 @@ station:  # Note that HSL separates "stations" and "stop"
 
 stop: {}  # Add stops instead if you need schedules from those. Structure is same as for stations.
 
+# Settings for sending messages
+# How much earlier departures are sent
+time_distance: 900
+
 # Setting for updating data from HSL.
 initialize_departures_db: False  # If departures database is truncated during startup.
-update_frequency: 300  # How ofter new departures is requested from HSL.
+update_frequency: 60  # How ofter new departures is requested from HSL.
 
 # Other settings
 logging_level: INFO  # Logs are stored in folder "logs/"
+
+virtual_environment: True  # If True 
