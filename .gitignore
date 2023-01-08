@@ -4,4 +4,3 @@ venv/
 *.log
 departures.json
 config.yaml
-rest_config.yaml
