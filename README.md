@@ -1,5 +1,10 @@
 # my-departures
 
+My Deartures is a small utility that pulls stop schedules from HSL (Helsinki metropolitan transportation) APIs and publishes them to Telegram bots.
+
+Image for Raspberry Pi is available in https://github.com/truhponen/my-departures/pkgs/container/my-departures
+
+
 Docker Compose file
     
     version: '3'
