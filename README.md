@@ -4,8 +4,9 @@ My Deartures is a small utility that pulls stop schedules from HSL (Helsinki met
 
 Image for Raspberry Pi is available in https://github.com/truhponen/my-departures/pkgs/container/my-departures
 
+## Docker Compose
 
-Docker Compose file
+Docker Compose file used to setup Docker container
     
     version: '3'
 
@@ -29,3 +30,34 @@ Docker Compose file
       my-departures:
         external: true
 
+## Configuration
+
+Configuration file is used to configure solution.
+
+properly filled config.yaml needs to be added to "/data"-folder.
+
+    # Settings for sending HSL data to app.
+    stops:
+      HSL_1000103:  # Add ID of preferred station here
+        stop_type: 'station' # Needed because HSL separates "stations" and "stop"
+        app: 'Telegram'
+        token: '[Add the bot token from Telegram here]'
+        chat_id: '[add chat ID here]'  # Later this will be automated
+      HSL_2000109:
+        stop_type: 'station'
+        app: 'Telegram'
+        token: '[Add the bot token from Telegram here]'
+        chat_id: '[add chat ID here]'  # Later this will be automated
+
+    digitransit-subscription-key: '[Add HSL secret here]'
+
+    # Settings for sending messages
+    # How much earlier departures are sent
+    time_distance: 900
+
+    # Setting for updating data from HSL.
+    initialize_departures_db: False  # If departures database is truncated during startup.
+    update_frequency: 60  # How ofter new departures is requested from HSL.
+
+    # Other settings
+    logging_level: INFO  # Logs are stored in folder "logs/"
