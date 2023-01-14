@@ -46,3 +46,15 @@ telegram:
       chat_id: '{chat_id}'  # Chat ID for users chat with bot ... I hope in future these are stored automatically to database.
       message_id: '{message_id}'
 
+db:
+  get_updates:
+    query: false
+  send_message:
+    query: 
+      less_or_equal:
+        time: 900
+      equal:
+        send_status: false
+  update_message:
+  delete_message: 
+
