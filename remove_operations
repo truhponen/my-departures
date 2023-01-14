@@ -1,3 +1,4 @@
+"""
 import logging
 import config
 import db
@@ -76,10 +77,9 @@ class bot_operation:
             logging.info("No new departures to " + str(self.name)) 
 
         else:
-        """
         
         print(db_response)
-        """
+
         # Form message
         text = datetime.fromtimestamp(departure_time).strftime("%H:%M") + " - " + headsign
         logging.info("Message is " + text)
@@ -102,7 +102,7 @@ class bot_operation:
                     }
         db.upsert(self.stop_id, departure_id, db_data)
         logging.info("Departure " + str(departure_id) + " updated with message details " + str(db_data))
-            """
 
 this = bot_operation("nimi", "stop")
 this.do()
+"""

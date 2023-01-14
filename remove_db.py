@@ -1,3 +1,4 @@
+"""
 import config
 # import logging
 import os
@@ -59,7 +60,6 @@ def remove(table_id, departure_id):
     table.remove(departure.id == departure_id)
     return True
 
-"""
 def search(table_id, **kwargs):
     db = TinyDB(config.db)
     table = db.table(table_id)
@@ -69,7 +69,7 @@ def search(table_id, **kwargs):
         if arg == 'less_or_equal'
             departures = table.search(departure.arg < kwargs[arg])
     return departures
-"""
+
 operators = {
     "==": 'eq',
     "!=": 'ne',
@@ -92,3 +92,4 @@ def search(table_id, key, oper, value):
 
 print(search("HSL_1000103", 'time', '<=', 1673460859))
 print(operator.and_(operator.eq(1,1),operator.eq(1,2)))
+"""

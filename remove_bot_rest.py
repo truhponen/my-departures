@@ -1,3 +1,4 @@
+"""
 import config
 import logging
 import requests
@@ -7,19 +8,13 @@ class rest:
         self.service = service
         self.method = config.rest[app][service]['method']
         self.headers = config.rest[app][service]['headers']
-        self.get_departures_url = config.rest['hsl']['get_departures']['url']
-        self.get_updates_url = config.rest[app]['get_updates']['url']
-        self.send_message_url = config.rest[app]['send_message']['url']
-        self.update_message_url = config.rest[app]['update_message']['url']
-        self.delete_message_url = config.rest[app]['get_updates']['url']
-
+        self.url = config.rest[app][service]['url']
         for arg in kwargs:
             if arg in self.url:
                 self.url = self.url.replace("{"+arg+"}", kwargs[arg])
         self.body_template = config.rest[app][service]['body']
 
     def form_body(self, **kwargs):
-        print(kwargs)
         body = {}
         for item in self.body_template:
             new_value = self.body_template[item]
@@ -40,4 +35,4 @@ class rest:
             response = requests.get(self.url, headers=self.headers, json=body).json()
             logging.info("Response is: " + str(response))
             return response
-
+"""
