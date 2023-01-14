@@ -1,28 +1,22 @@
-import bot
-import bot_rest
+import stop
 import config
-import db
 import logging
 import time
-
-
-if config.app['initialize_departures_db']:
-    db.drop_tables()
-    logging.info("Tables dropped")
 
 my_stops = config.app['stops']
 my_bots = []
 
-for stop in my_stops:
-    stop = bot.bot_operations(str(stop), config.app['stops'][stop]['stop_type'], stop)
-    my_bots.append(stop)
-    logging.info("Bot " + str(stop.name) + " created")
+for item in my_stops:
+    item = stop.stop_operations(config.app['stops'][item]['stop_type'], item)
+    my_bots.append(item)
+    logging.info("Bot " + str(item) + " created")
 
 logging.info("Starting main program")
 while True:
     for item in my_bots:
-        item.get_departures()
-        item.send_messages()
         item.clean_departures()
+        item.get_departures()
+        item.update_messages()
+        item.send_messages()
     logging.info("Waiting until next updates")
     time.sleep(config.app['update_frequency'])
