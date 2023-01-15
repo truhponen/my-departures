@@ -16,17 +16,26 @@ class database:
             db_response = self.table.search(db_items.time < int(dead_line))
         return db_response
 
-    def upsert(self, departure_id, dataset):
+    def search_highest(self, key):
+        db_response = self.table.all()
+        sort_list = [item[key] for item in db_response]
+        sort_list.sort()
+        if len(sort_list) > 0:
+            return sort_list[-1]
+        else:
+            return 0
+
+    def upsert(self, id, dataset):
         db_items = Query()
-        self.table.upsert(dataset, db_items.id == departure_id)
-        return True
+        db_response = self.table.upsert(dataset, db_items.id == id)
+        return db_response
 
     def check_if_exists(self, id_value):
         db_items = Query()
-        evaluation = self.table.contains(db_items.id == id_value)
-        return evaluation
+        db_response = self.table.contains(db_items.id == id_value)
+        return db_response
 
-    def delete(self, departure_id): 
-        departure = Query()
-        self.table.remove(departure.id == departure_id)
-        return True
+    def delete(self, id): 
+        db_items = Query()
+        db_response = self.table.remove(db_items.id == id)
+        return db_response

@@ -16,8 +16,8 @@ telegram:
     headers:
       Content-Type: "application/json"
     body:
-      offset: '{offset}'
       allowed_updates: 'message'
+      offset: '{update_id}'
   send_message:
     method: 'GET'
     url: "https://api.telegram.org/bot{token}/sendMessage"

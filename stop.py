@@ -5,6 +5,7 @@ from datetime import datetime
 import flatdict
 import logging
 import time
+import utility
 
 
 class stop_operations:
@@ -14,47 +15,83 @@ class stop_operations:
         self.stop_id_hsl = str('\"'+self.stop_id+'\"').replace("_", ":")
         self.app = 'telegram'
         self.token = config.app['stops'][stop_id]['telegram']['token']
-        self.rest_get_departures = rest.rest('hsl', 'get_departures')
-        self.rest_get_updates = rest.rest(str(self.app), 'get_updates', token=self.token)
-        self.rest_send_message = rest.rest(str(self.app), 'send_message', token=self.token)
-        self.rest_update_message = rest.rest(str(self.app), 'update_message', token=self.token)
-        self.rest_delete_message = rest.rest(str(self.app), 'delete_message', token=self.token)
-        self.db = database.database(self.stop_id)
+        self.rest_get_departures = rest.rest(self.stop_id, 'hsl', 'get_departures')
+        self.rest_get_updates = rest.rest(self.stop_id, str(self.app), 'get_updates', token=self.token)
+        self.rest_send_message = rest.rest(self.stop_id, str(self.app), 'send_message', token=self.token)
+        self.rest_update_message = rest.rest(self.stop_id, str(self.app), 'update_message', token=self.token)
+        self.rest_delete_message = rest.rest(self.stop_id, str(self.app), 'delete_message', token=self.token)
+        self.db_departures = database.database('departures_' + str(self.stop_id))
+        self.db_subscriptions = database.database('subcriptions_' + str (self.stop_id))
+        self.db_update_tracker = database.database('update_tracker' + str (self.stop_id))
     
 
-    def get_updates(self):
-        logging.info("Getting updates related to " + str(self.stop_id))
+    def create_subscription(self):
+        logging.info("Stop [" + str(self.stop_id) + "] - Get updates")
 
-        # Get existing "//start"-messages from DB
-        # Find the latest timestamp
+        update_id = self.db_update_tracker.search_highest('id') + 1
+        rest_response = self.rest_get_updates.call(update_id=update_id)  # Get updates
 
-        # Form body
-        kwargs = {'offset': offset}
-        body = self.get_updates_rest.form_body(kwargs)
-        logging.info("Body for update message is " + str(body))
+        if rest_response['ok'] == False:
+            logging.error("Stop [" + str(self.stop_id) + "] - Response to get updates: " + str(rest_response))
 
-        rest_response = self.get_updates_rest.call()
+        else:
+            logging.info("Stop [" + str(self.stop_id) + "] - Response to get updates: " + str(rest_response))
 
-        # Update database based on response
+            if len(rest_response['result']) > 0:
+
+                for item in rest_response['result']:
+                    update_id = item['update_id']
+                    db_data = {
+                               'id': update_id,
+                               }
+                    self.db_update_tracker.upsert(update_id, db_data)
+
+                    if utility.search_text(rest_response, "/start") > 0:
+                        chat_id = item['message']['chat']['id']
+                        message_time = item['message']['date']
+                        db_data = {
+                                'id': chat_id,
+                                'update_id': update_id,
+                                'time': message_time,
+                                'updated': time.time()
+                                }
+
+                        if self.db_subscriptions.check_if_exists(chat_id):
+                            logging.info("Stop [" + str(self.stop_id) + "] - Chat ID [" + str(chat_id) + "] - Already in database")
+                        
+                        else:
+                            self.db_subscriptions.upsert(chat_id, db_data)  # Update message details to database
+                            logging.info("Stop [" + str(self.stop_id) + "] - Chat ID [" + str(chat_id) + "] - Updated database")
+
+                    else:
+                        logging.info("Stop [" + str(self.stop_id) + "] - Not \"//start\" message")
+            
+            else:
+                logging.info("Stop [" + str(self.stop_id) + "] - No updates available")
+
+
+    def delete_subscription(self, chat_id):
+        rest_response = self.db_subscriptions.delete(chat_id)
+        logging.error("Stop [" + str(self.stop_id) + "] - Response to get updates: " + str(rest_response))
+
 
     def get_departures(self):
-        logging.info("Getting departures for " + str(self.stop_id))
+        logging.info("Stop [" + str(self.stop_id) + "] - Get departures")
 
         # Request new data set
-        new_dataset = self.rest_get_departures.call(stop_type=self.stop_type, stop_id_hsl=self.stop_id_hsl)
-        new_dataset = flatdict.FlatDict(new_dataset, delimiter=".")
+        rest_response = self.rest_get_departures.call(stop_type=self.stop_type, stop_id_hsl=self.stop_id_hsl)
+        new_dataset = flatdict.FlatDict(rest_response, delimiter=".")
         new_dataset = new_dataset['data.'+self.stop_type+'.stoptimesWithoutPatterns']
-        logging.info("HSL data for " + str(self.stop_id) + " retrieved")
+        logging.info("Stop [" + str(self.stop_id) + "] - HSL data: " + str(new_dataset))
 
-        # Define values based on HSL dataset.
-        for departure in new_dataset:
+        for departure in new_dataset:  # Define values based on HSL dataset.
             departure_id = str(self.stop_id) + "_" + str(departure['serviceDay'] + departure['scheduledArrival'])
             departure_time = departure['serviceDay'] + departure['realtimeArrival']
             departure_headsign = departure['headsign']
 
-            # Check if departure is new and add departure to database.
-            if self.db.check_if_exists(departure_id) == False:
-                logging.info("HSL data for departure " + str(departure_id) + " is new")
+            
+            if self.db_departures.check_if_exists(departure_id) == False:  # Check if departure is new and add departure to database.
+                logging.info("Stop [" + str(self.stop_id) + "] - Departure " + str(departure_id) + " - Departure is new")
                 db_data = {'id': departure_id,
                           'time': departure_time,
                           'headsign': departure_headsign,
@@ -64,7 +101,7 @@ class stop_operations:
                           'text': "",
                           'updated': time.time()}
             else:
-                logging.info("HSL data for departure " + str(departure_id) + " is old")
+                logging.info("Stop [" + str(self.stop_id) + "] - Departure " + str(departure_id) + " - Departure is old")
                 db_data = {
                            # 'id': departure_id,
                            'time': departure_time,
@@ -75,103 +112,119 @@ class stop_operations:
                            # 'text': text,
                            'updated': time.time()
                            }
-            self.db.upsert(departure_id, db_data)
-            logging.info("Stored departure " + str(db_data))
+            self.db_departures.upsert(departure_id, db_data)
+            logging.info("Stop [" + str(self.stop_id) + "] - Departure " + str(departure_id) + " - Added / updated departure data")
+
 
     def update_messages(self):
-        logging.info("Updating messages for " + str(self.stop_id))       
+        logging.info("Stop [" + str(self.stop_id) + "] - Updating messages")       
 
         # Retrieve departures from database
         dead_line = time.time() + config.app['time_distance']
-        db_response = self.db.search(dead_line, send_status=True)
+        db_response = self.db_departures.search(dead_line, send_status=True)
 
         if len(db_response) == 0:
-            logging.info("No departures to be updated") 
+            logging.info("Stop [" + str(self.stop_id) + "] - No departures to be updated") 
 
         else:
             for departure in db_response:
                 departure_id = departure['id']
                 departure_time = departure['time']
                 departure_headsign = departure['headsign']
-                chat_id = departure['chat_id']
+                chat_id = ''
+                subscriptions = self.db_subscriptions.search(dead_line)
                 message_id = departure['message_id']
                 text_from_db = departure['text']
-
-                # Form message
                 text = datetime.fromtimestamp(departure_time).strftime("%H:%M") + " - " + departure_headsign
-                logging.info("Message is " + text)
 
-                # Send update only for messages where text has changed
-                if text != text_from_db:
+                if text == text_from_db:  # Send update only for messages where text has changed
+                    logging.info("Stop [" + str(self.stop_id) + "] - Departure [" + str(departure_id) + "] - Message has not changed - Old message [" + str(text_from_db) + "]")
+                
+                else:
+                    logging.info("Stop [" + str(self.stop_id) + "] - Departure [" + str(departure_id) + "] - Message has changed - New message [" + str(text) + "] - Earlier message [" + str(text_from_db) + "]")
 
-                    # Send message
-                    self.rest_update_message.call(chat_id=chat_id, message_id=message_id, text=text)
+                    for subscription in subscriptions:
+                        chat_id = subscription['id']
+                        rest_response = self.rest_update_message.call(chat_id=chat_id, message_id=message_id, text=text)  # Send message
 
-                    # Update data in DB
-                    db_data = {
-                           # 'id': departure_id,
-                           'time': departure_time,
-                           'headsign': departure_headsign,
-                           # 'send_status': True,
-                           # 'chat_id': chat_id,
-                           # 'message_id': message_id,
-                           'text': text,
-                           'updated': time.time()
-                           }
-                    self.db.upsert(departure_id, db_data)
-                    logging.info("Departure " + str(departure_id) + " updated with message details " + str(db_data)) 
+                        if rest_response['ok'] == False:
+                            logging.error("Stop [" + str(self.stop_id) + "] - Departure [" + str(departure_id) + "] - Response to send message: " + str(rest_response))
+
+                            self.delete_subscription(chat_id)
+
+                        else:
+                            logging.info("Stop [" + str(self.stop_id) + "] - Departure [" + str(departure_id) + "] - Response to send message: " + str(rest_response))
+                            db_data = {
+                                # 'id': departure_id,
+                                'time': departure_time,
+                                'headsign': departure_headsign,
+                                # 'send_status': True,
+                                # 'chat_id': chat_id,
+                                # 'message_id': message_id,
+                                'text': text,
+                                'updated': time.time()
+                                }
+                            self.db_departures.upsert(departure_id, db_data)  # Update data in DB
+                            logging.info("Stop [" + str(self.stop_id) + "] - Departure " + str(departure_id) + " Updated database") 
+
 
     def send_messages(self):
-        logging.info("Sending messages for " + str(self.stop_id))
+        logging.info("Stop [" + str(self.stop_id) + "] - Sending messages")
 
-        # Retrieve departures from database
         dead_line = time.time() + config.app['time_distance']
-        db_response = self.db.search(dead_line, send_status=False)
+        db_response = self.db_departures.search(dead_line, send_status=False)  # Retrieve departures from database
 
         if len(db_response) == 0:
-            logging.info("No new departures to send messages") 
+            logging.info("Stop [" + str(self.stop_id) + "] - No new departures to send messages") 
 
         else:
             for departure in db_response:
                 departure_id = departure['id']
                 departure_time = departure['time']
                 departure_headsign = departure['headsign']
-                chat_id = str(config.app['stops'][self.stop_id][self.app]['chat_id'])
-                # message_id = departure['message_id']
-                # text_from_db = departure['text']
-                
-                # Form message
-                text = datetime.fromtimestamp(departure_time).strftime("%H:%M") + " - " + departure_headsign
-                logging.info("Message is " + text)
+                dead_line = time.time()
+                chat_id = ''
+                subscriptions = self.db_subscriptions.search(dead_line)
+                text = datetime.fromtimestamp(departure_time).strftime("%H:%M") + " - " + departure_headsign  # Form message
 
-                # Send message
-                rest_response = self.rest_send_message.call(chat_id=chat_id, text=text)
+                logging.info("Stop [" + str(self.stop_id) + "] - Departure [" + str(departure_id) + "] - Message is " + text)
 
-                # Update message details to database
-                message_id = rest_response['result']['message_id']
-                chat_id = rest_response['result']['chat']['id']
-                db_data = {
-                           # 'id': departure_id,
-                           'time': departure_time,
-                           'headsign': departure_headsign,
-                           'send_status': True,
-                           'chat_id': chat_id,
-                           'message_id': message_id,
-                           'text': text,
-                           'updated': time.time()
-                           }
-                self.db.upsert(departure_id, db_data)
-                logging.info("Departure " + str(departure_id) + " updated with message details " + str(db_data))          
+                for subscription in subscriptions:
+                    chat_id = subscription['id']
+                    rest_response = self.rest_send_message.call(chat_id=chat_id, text=text)  # Send message
+                    
+                    if rest_response['ok'] == False:
+                        logging.error("Stop [" + str(self.stop_id) + "] - Departure [" + str(departure_id) + "] - Chat ID [" + str(chat_id) + "] - Response to send message: " + str(rest_response))
+
+                        self.delete_subscription(chat_id)
+                    
+                    else:
+                        logging.info("Stop [" + str(self.stop_id) + "] - Departure [" + str(departure_id) + "] - Chat ID [" + str(chat_id) + "] - Response to send message: " + str(rest_response))
+
+                        message_id = rest_response['result']['message_id']
+                        chat_id = rest_response['result']['chat']['id']
+                        db_data = {
+                                # 'id': departure_id,
+                                'time': departure_time,
+                                'headsign': departure_headsign,
+                                'send_status': True,
+                                'chat_id': chat_id,
+                                'message_id': message_id,
+                                'text': text,
+                                'updated': time.time()
+                                }
+                        self.db_departures.upsert(departure_id, db_data)  # Update message details to database
+                        logging.info("Stop [" + str(self.stop_id) + "] - Departure [" + str(departure_id) + "] - Chat ID [" + str(chat_id) + "] - Updated database")
+
 
     def clean_departures(self):
-        logging.info("Cleaning messages and data base for " + str(self.stop_id))
+        logging.info("Stop [" + str(self.stop_id) + "] - Deleting messages and database entries")
 
-        # Retrieve departures from database
         dead_line = time.time()
-        db_response = self.db.search(dead_line)
+        db_response = self.db_departures.search(dead_line)  # Retrieve departures from database
         
         if len(db_response) == 0:
-            logging.info("Nothing to delete for bot " + str(self.stop_id))
+            logging.info("Stop [" + str(self.stop_id) + "] - Nothing to delete")
 
         else:
             for departure in db_response:
@@ -182,12 +235,19 @@ class stop_operations:
                 message_id = departure['message_id']
                 # text_from_db = departure['text']
 
-                # Delete messages
-                rest_response = self.rest_delete_message.call(chat_id=chat_id, message_id=message_id)
-                logging.info("Response to delete message for " + str(departure_id) + ": " +str(rest_response))
+                if message_id == "":
+                    logging.info("Stop [" + str(self.stop_id) + "] - Departure [" + str(departure_id) + "] - No message ID. No message sent.")
 
-                # Remove from database
-                db_response = self.db.delete(departure_id)
-                logging.info("Response to delete message for " + str(departure_id) + ": " +str(db_response))
+                else:
+                    rest_response = self.rest_delete_message.call(chat_id=chat_id, message_id=message_id)  # Delete messages
+                    
+                    if rest_response['ok'] == False:
+                        logging.error("Stop [" + str(self.stop_id) + "] - Departure [" + str(departure_id) + "] - Response to delete message: " + str(rest_response))
+                    
+                    else:
+                        logging.info("Stop [" + str(self.stop_id) + "] - Departure [" + str(departure_id) + "] - Response to delete message: " + str(rest_response))
+
+                db_response = self.db_departures.delete(departure_id)  # Remove from database
+                logging.info("Stop [" + str(self.stop_id) + "] - Departure [" + str(departure_id) + "] - Response to remove database entry: " + str(db_response))
 
     
