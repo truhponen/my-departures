@@ -16,7 +16,7 @@ services:
 #      - 8123:8123/tcp
 
     volumes:
-      - my-departures:${APP_DIR}/data:rw
+      - my-departures:${APP_DIR}/data:rw  # APP_DIR is defined in Dockerfile
       - /etc/localtime:/etc/localtime:ro
 
 volumes:
