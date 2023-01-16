@@ -5,7 +5,6 @@ from datetime import datetime
 import flatdict
 import logging
 import time
-import utility
 
 
 class stop_operations:
@@ -46,7 +45,7 @@ class stop_operations:
                                }
                     self.db_update_tracker.upsert(update_id, db_data)
 
-                    if utility.search_text(rest_response, "/start") > 0:
+                    if "/start" in str(item):
                         chat_id = item['message']['chat']['id']
                         message_time = item['message']['date']
                         db_data = {
